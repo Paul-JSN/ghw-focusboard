@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="FocusBoard is a calm, local-first task dashboard for Global Hack Week.">
+  <title>FocusBoard | Global Hack Week</title>
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #667085;
+      --paper: #f7f8fc;
+      --surface: #ffffff;
+      --line: #e4e7ec;
+      --brand: #5b5bd6;
+      --brand-dark: #4545a8;
+      --brand-soft: #eeefff;
+      --success: #087443;
+      --danger: #b42318;
+      --shadow: 0 20px 60px rgba(31, 41, 79, .1);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 5% 0%, #e9eaff 0, transparent 28rem),
+        radial-gradient(circle at 95% 10%, #f5eefe 0, transparent 25rem),
+        var(--paper);
+    }
+
+    button, input { font: inherit; }
+
+    button {
+      cursor: pointer;
+      border: 0;
+    }
+
+    button:focus-visible, input:focus-visible {
+      outline: 3px solid rgba(91, 91, 214, .35);
+      outline-offset: 2px;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 28px 0;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      font-size: 1.15rem;
+    }
+
+    .logo-mark {
+      display: grid;
+      place-items: center;
+      width: 35px;
+      height: 35px;
+      border-radius: 11px;
+      color: #fff;
+      background: var(--brand);
+      box-shadow: 0 8px 18px rgba(91, 91, 214, .28);
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      gap: 8px;
+      padding: 0 18px;
+      border-radius: 10px;
+      font-weight: 750;
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .button:hover { transform: translateY(-1px); }
+    .button-primary {
+      color: #fff;
+      background: var(--brand);
+      box-shadow: 0 8px 20px rgba(91, 91, 214, .2);
+    }
+    .button-primary:hover { background: var(--brand-dark); }
+    .button-secondary {
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+    .button-danger {
+      color: var(--danger);
+      background: transparent;
+      min-height: 34px;
+      padding: 0 9px;
+      font-size: .88rem;
+    }
+    .button-danger:hover { background: #fff1f0; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 46px;
+      align-items: center;
+      min-height: 530px;
+      padding: 58px 0 90px;
+    }
+
+    .eyebrow {
+      color: var(--brand-dark);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 670px;
+      margin: 16px 0 20px;
+      font-size: clamp(2.7rem, 7vw, 5.6rem);
+      line-height: .98;
+      letter-spacing: -.075em;
+    }
+
+    .hero-copy {
+      max-width: 600px;
+      color: var(--muted);
+      font-size: 1.15rem;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .hero-card {
+      position: relative;
+      padding: 30px;
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: 28px;
+      background: rgba(255,255,255,.75);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero-card::before {
+      position: absolute;
+      inset: -14px auto auto -14px;
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: #dfe1ff;
+      content: "";
+      z-index: -1;
+    }
+
+    .hero-card h2 {
+      margin: 0 0 22px;
+      font-size: 1.1rem;
+    }
+
+    .mini-task {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      font-size: .94rem;
+    }
+
+    .mini-task:last-child { border-bottom: 0; }
+    .mini-check {
+      width: 19px;
+      height: 19px;
+      border: 2px solid #c8cce0;
+      border-radius: 6px;
+      flex: 0 0 auto;
+    }
+    .mini-task.done { color: var(--muted); text-decoration: line-through; }
+    .mini-task.done .mini-check { border-color: var(--success); background: var(--success); }
+
+    .app-view { padding: 18px 0 70px; }
+
+    .app-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin: 22px 0 32px;
+    }
+
+    .app-header h1 {
+      margin: 7px 0 10px;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      letter-spacing: -.06em;
+    }
+
+    .welcome {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px 8px 8px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.78);
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      overflow: hidden;
+      border-radius: 12px;
+      color: var(--brand-dark);
+      background: var(--brand-soft);
+      font-weight: 800;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-name {
+      max-width: 180px;
+      overflow: hidden;
+      font-size: .9rem;
+      font-weight: 750;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-email {
+      max-width: 180px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: .78rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 22px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 12px 35px rgba(31, 41, 79, .06);
+    }
+
+    .task-panel { padding: 24px; }
+
+    .add-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .input {
+      width: 100%;
+      min-height: 46px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .input::placeholder { color: #98a2b3; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .toolbar h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fafbff;
+    }
+
+    .filter {
+      min-height: 32px;
+      padding: 0 10px;
+      border-radius: 7px;
+      color: var(--muted);
+      background: transparent;
+      font-size: .82rem;
+      font-weight: 700;
+    }
+
+    .filter[aria-pressed="true"] {
+      color: var(--brand-dark);
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(31, 41, 79, .09);
+    }
+
+    .task-list {
+      display: grid;
+      gap: 8px;
+      min-height: 86px;
+    }
+
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 58px;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      transition: background .18s ease, border .18s ease;
+    }
+
+    .task-row:hover {
+      border-color: var(--line);
+      background: #fbfbff;
+    }
+
+    .task-toggle {
+      display: grid;
+      place-items: center;
+      width: 23px;
+      height: 23px;
+      padding: 0;
+      border: 2px solid #c8cce0;
+      border-radius: 7px;
+      color: #fff;
+      background: #fff;
+      flex: 0 0 auto;
+    }
+
+    .task-toggle[aria-pressed="true"] {
+      border-color: var(--success);
+      background: var(--success);
+    }
+
+    .task-toggle[aria-pressed="true"]::after {
+      width: 9px;
+      height: 5px;
+      border-bottom: 2px solid #fff;
+      border-left: 2px solid #fff;
+      transform: rotate(-45deg) translate(1px, -1px);
+      content: "";
+    }
+
+    .task-text {
+      min-width: 0;
+      flex: 1;
+      color: var(--ink);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .task-row.completed .task-text {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 110px;
+      padding: 18px;
+      border: 1px dashed #cfd3e1;
+      border-radius: 12px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .stats-panel {
+      display: grid;
+      align-content: start;
+      gap: 14px;
+      padding: 22px;
+    }
+
+    .stats-panel h2 {
+      margin: 0 0 3px;
+      font-size: 1rem;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 14px;
+      background: #f8f8ff;
+    }
+
+    .stat-value {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--brand-dark);
+      font-size: 1.65rem;
+      font-weight: 800;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: .83rem;
+    }
+
+    .privacy-note {
+      margin-top: 18px;
+      padding: 15px 16px;
+      border-radius: 12px;
+      color: #475467;
+      background: #f7f8fa;
+      font-size: .79rem;
+      line-height: 1.55;
+    }
+
+    .status {
+      width: min(720px, calc(100% - 32px));
+      margin: 35px auto;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .status h1 {
+      margin: 0 0 10px;
+      font-size: 1.5rem;
+      letter-spacing: -.04em;
+    }
+
+    .status p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    [hidden] { display: none !important; }
+
+    @media (max-width: 760px) {
+      .topbar { padding: 18px 0; }
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        min-height: auto;
+        padding: 38px 0 65px;
+      }
+      .hero-card { max-width: 560px; }
+      .app-header { flex-direction: column; }
+      .dashboard { grid-template-columns: 1fr; }
+      .stats-panel { grid-template-columns: repeat(3, 1fr); }
+      .stats-panel h2, .privacy-note { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 500px) {
+      .shell { width: min(100% - 22px, 1120px); }
+      .topbar .button { min-height: 39px; padding: 0 12px; }
+      .hero-actions, .add-form { flex-direction: column; }
+      .hero-actions .button, .add-form .button { width: 100%; }
+      .task-panel { padding: 16px; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .filters { width: 100%; }
+      .filter { flex: 1; }
+      .stats-panel { grid-template-columns: 1fr; }
+      .stats-panel h2, .privacy-note { grid-column: auto; }
+      .profile { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell topbar">
+    <a class="logo" href="./" aria-label="FocusBoard home">
+      <span class="logo-mark" aria-hidden="true">F</span>
+      <span>FocusBoard</span>
+    </a>
+    <button class="button button-primary" id="loginButton" type="button">Sign in</button>
+    <button class="button button-secondary" id="logoutButton" type="button" hidden>Sign out</button>
+  </header>
+
+  <main>
+    <section class="shell" id="publicView">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Global Hack Week</div>
+          <h1>Make room for focused work.</h1>
+          <p class="hero-copy">
+            FocusBoard keeps your next steps visible without adding noise. Sign in with Auth0,
+            create a lightweight personal board, and keep your task data local to this browser.
+          </p>
+          <div class="hero-actions">
+            <button class="button button-primary" id="heroLoginButton" type="button">Start focusing</button>
+            <a class="button button-secondary" href="#privacy">Learn about privacy</a>
+          </div>
+        </div>
+
+        <div class="hero-card" aria-label="FocusBoard preview">
+          <h2>Today, with intention</h2>
+          <div class="mini-task done"><span class="mini-check" aria-hidden="true"></span><span>Review project direction</span></div>
+          <div class="mini-task"><span class="mini-check" aria-hidden="true"></span><span>Build the first useful version</span></div>
+          <div class="mini-task"><span class="mini-check" aria-hidden="true"></span><span>Share progress with the team</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell app-view" id="appView" hidden>
+      <div class="app-header">
+        <div>
+          <div class="eyebrow">Your focus board</div>
+          <h1>Small steps, real momentum.</h1>
+          <p class="welcome" id="welcomeText">Your tasks are ready when you are.</p>
+        </div>
+
+        <div class="profile" id="profileCard">
+          <div class="avatar" id="avatar" aria-hidden="true"></div>
+          <div>
+            <div class="profile-name" id="profileName"></div>
+            <div class="profile-email" id="profileEmail"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard">
+        <section class="panel task-panel" aria-labelledby="tasksHeading">
+          <form class="add-form" id="taskForm">
+            <label class="sr-only" for="taskInput">New task</label>
+            <input class="input" id="taskInput" name="task" type="text" maxlength="160" autocomplete="off" placeholder="What needs your attention?" required>
+            <button class="button button-primary" type="submit">Add task</button>
+          </form>
+
+          <div class="toolbar">
+            <h2 id="tasksHeading">Tasks <span id="taskCount"></span></h2>
+            <div class="filters" aria-label="Filter tasks">
+              <button class="filter" type="button" data-filter="all" aria-pressed="true">All</button>
+              <button class="filter" type="button" data-filter="active" aria-pressed="false">Active</button>
+              <button class="filter" type="button" data-filter="done" aria-pressed="false">Done</button>
+            </div>
+          </div>
+
+          <div class="task-list" id="taskList" aria-live="polite"></div>
+
+          <div class="privacy-note" id="privacy">
+            <strong>Privacy note:</strong> Your task list is non-sensitive data stored only in this browser,
+            under your Auth0 user ID. Tasks are not cloud-synced or sent to FocusBoard.
+          </div>
+        </section>
+
+        <aside class="panel stats-panel" aria-label="Task statistics">
+          <h2>Your progress</h2>
+          <div class="stat">
+            <span class="stat-value" id="totalStat">0</span>
+            <span class="stat-label">Total tasks</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="activeStat">0</span>
+            <span class="stat-label">Active tasks</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="doneStat">0</span>
+            <span class="stat-label">Completed tasks</span>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="status" id="loadingView" aria-live="polite">
+      <h1>Loading FocusBoard</h1>
+      <p>Connecting securely. You will be redirected to Universal Login if needed.</p>
+    </section>
+
+    <section class="status" id="errorView" hidden role="alert">
+      <h1>We could not load FocusBoard</h1>
+      <p id="errorMessage">Something went wrong while connecting your account.</p>
+      <button class="button button-primary" id="retryButton" type="button">Try again</button>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+
+    const AUTH0_DOMAIN = "dev-bb6ubyx0qjr7w13p.us.auth0.com";
+    const AUTH0_CLIENT_ID = "t4I2AoCvgo7f3bSnXqzqAFuUXHQQIzcx";
+    const REDIRECT_URI = window.location.origin + window.location.pathname;
+    const STORAGE_PREFIX = "focusboard.tasks.";
+
+    let auth0Client = null;
+    let currentUser = null;
+    let tasks = [];
+    let activeFilter = "all";
+
+    const elements = {
+      publicView: document.getElementById("publicView"),
+      appView: document.getElementById("appView"),
+      loadingView: document.getElementById("loadingView"),
+      errorView: document.getElementById("errorView"),
+      errorMessage: document.getElementById("errorMessage"),
+      retryButton: document.getElementById("retryButton"),
+      loginButton: document.getElementById("loginButton"),
+      heroLoginButton: document.getElementById("heroLoginButton"),
+      logoutButton: document.getElementById("logoutButton"),
+      profileName: document.getElementById("profileName"),
+      profileEmail: document.getElementById("profileEmail"),
+      avatar: document.getElementById("avatar"),
+      welcomeText: document.getElementById("welcomeText"),
+      taskForm: document.getElementById("taskForm"),
+      taskInput: document.getElementById("taskInput"),
+      taskList: document.getElementById("taskList"),
+      taskCount: document.getElementById("taskCount"),
+      totalStat: document.getElementById("totalStat"),
+      activeStat: document.getElementById("activeStat"),
+      doneStat: document.getElementById("doneStat")
+    };
+
+    function showLoading() {
+      elements.loadingView.hidden = false;
+      elements.errorView.hidden = true;
+      elements.publicView.hidden = true;
+      elements.appView.hidden = true;
+    }
+
+    function showError(error) {
+      console.error(error);
+      elements.loadingView.hidden = true;
+      elements.errorView.hidden = false;
+      elements.publicView.hidden = true;
+      elements.appView.hidden = true;
+      elements.errorMessage.textContent = error instanceof Error
+        ? error.message
+        : "Something went wrong while connecting your account.";
+    }
+
+    function showPublicView() {
+      elements.loadingView.hidden = true;
+      elements.errorView.hidden = true;
+      elements.publicView.hidden = false;
+      elements.appView.hidden = true;
+      elements.loginButton.hidden = false;
+      elements.logoutButton.hidden = true;
+    }
+
+    function showAppView() {
+      elements.loadingView.hidden = true;
+      elements.errorView.hidden = true;
+      elements.publicView.hidden = true;
+      elements.appView.hidden = false;
+      elements.loginButton.hidden = true;
+      elements.logoutButton.hidden = false;
+    }
+
+    function storageKey(userSub) {
+      return STORAGE_PREFIX + encodeURIComponent(userSub);
+    }
+
+    function loadTasks() {
+      try {
+        const saved = localStorage.getItem(storageKey(currentUser.sub));
+        const parsed = saved ? JSON.parse(saved) : [];
+        tasks = Array.isArray(parsed)
+          ? parsed.filter(task =>
+              task &&
+              typeof task.id === "string" &&
+              typeof task.text === "string" &&
+              typeof task.done === "boolean"
+            )
+          : [];
+      } catch (error) {
+        console.error("Could not load local tasks.", error);
+        tasks = [];
+      }
+    }
+
+    function saveTasks() {
+      try {
+        localStorage.setItem(storageKey(currentUser.sub), JSON.stringify(tasks));
+      } catch (error) {
+        console.error("Could not save local tasks.", error);
+      }
+    }
+
+    function createTask(text) {
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        text,
+        done: false,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    function renderProfile() {
+      const name = currentUser.name || currentUser.nickname || currentUser.email || "Focus user";
+      elements.profileName.textContent = name;
+      elements.profileEmail.textContent = currentUser.email || "Authenticated with Auth0";
+      elements.welcomeText.textContent = "A clear list for your next meaningful step.";
+
+      elements.avatar.replaceChildren();
+      if (currentUser.picture) {
+        const image = document.createElement("img");
+        image.src = currentUser.picture;
+        image.alt = "";
+        image.referrerPolicy = "no-referrer";
+        image.addEventListener("error", () => {
+          elements.avatar.textContent = name.charAt(0).toUpperCase();
+        }, { once: true });
+        elements.avatar.appendChild(image);
+      } else {
+        elements.avatar.textContent = name.charAt(0).toUpperCase();
+      }
+    }
+
+    function getVisibleTasks() {
+      if (activeFilter === "active") return tasks.filter(task => !task.done);
+      if (activeFilter === "done") return tasks.filter(task => task.done);
+      return tasks;
+    }
+
+    function renderTasks() {
+      const visibleTasks = getVisibleTasks();
+      const completed = tasks.filter(task => task.done).length;
+      const active = tasks.length - completed;
+
+      elements.totalStat.textContent = String(tasks.length);
+      elements.activeStat.textContent = String(active);
+      elements.doneStat.textContent = String(completed);
+      elements.taskCount.textContent = tasks.length ? "(" + tasks.length + ")" : "";
+
+      elements.taskList.replaceChildren();
+
+      if (!visibleTasks.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = activeFilter === "done"
+          ? "Completed tasks will appear here."
+          : activeFilter === "active"
+            ? "You have no active tasks."
+            : "Add your first task to begin.";
+        elements.taskList.appendChild(empty);
+        return;
+      }
+
+      visibleTasks.forEach(task => {
+        const row = document.createElement("div");
+        row.className = "task-row" + (task.done ? " completed" : "");
+
+        const toggle = document.createElement("button");
+        toggle.className = "task-toggle";
+        toggle.type = "button";
+        toggle.setAttribute("aria-label", task.done ? "Mark task as active" : "Mark task as complete");
+        toggle.setAttribute("aria-pressed", String(task.done));
+        toggle.addEventListener("click", () => {
+          task.done = !task.done;
+          saveTasks();
+          renderTasks();
+        });
+
+        const text = document.createElement("span");
+        text.className = "task-text";
+        text.textContent = task.text;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "button button-danger";
+        deleteButton.type = "button";
+        deleteButton.textContent = "Delete";
+        deleteButton.setAttribute("aria-label", "Delete task: " + task.text);
+        deleteButton.addEventListener("click", () => {
+          tasks = tasks.filter(item => item.id !== task.id);
+          saveTasks();
+          renderTasks();
+        });
+
+        row.append(toggle, text, deleteButton);
+        elements.taskList.appendChild(row);
+      });
+    }
+
+function normalizeAuthError(error) {
+  if (error instanceof Error) return error;
+
+  if (error && typeof error === "object") {
+    const message = error.error_description || error.error || error.message;
+    if (message) return new Error(String(message));
+  }
+
+  return new Error("Authentication failed. Please try again.");
+}
+
+function getAuthorizationCallbackError() {
+  const params = new URLSearchParams(window.location.search);
+  const error = params.get("error");
+
+  if (!error) return null;
+
+  const description = params.get("error_description");
+  const message = description ? error + ": " + description : error;
+
+  window.history.replaceState({}, document.title, REDIRECT_URI);
+  return new Error(message);
+}
+
+function clearDashboardState() {
+  currentUser = null;
+  tasks = [];
+
+  elements.profileName.textContent = "";
+  elements.profileEmail.textContent = "";
+  elements.welcomeText.textContent = "";
+  elements.avatar.replaceChildren();
+  elements.taskList.replaceChildren();
+  elements.taskCount.textContent = "";
+  elements.totalStat.textContent = "0";
+  elements.activeStat.textContent = "0";
+  elements.doneStat.textContent = "0";
+}
+
+async function login() {
+  if (!auth0Client) {
+    throw new Error("Authentication is still loading. Please try again.");
+  }
+
+  try {
+    await auth0Client.loginWithRedirect({
+      authorizationParams: {
+        redirect_uri: REDIRECT_URI
+      }
+    });
+  } catch (error) {
+    throw normalizeAuthError(error);
+  }
+}
+
+async function logout() {
+  if (!auth0Client) {
+    throw new Error("Authentication is not ready. Please try again.");
+  }
+
+  clearDashboardState();
+  showPublicView();
+
+  try {
+    await auth0Client.logout({
+      logoutParams: {
+        returnTo: REDIRECT_URI
+      }
+    });
+  } catch (error) {
+    throw normalizeAuthError(error);
+  }
+}
+
+async function initialize() {
+  showLoading();
+
+  if (AUTH0_CLIENT_ID === "REPLACE_WITH_PUBLIC_CLIENT_ID") {
+    throw new Error("Add your public Auth0 client ID before using FocusBoard.");
+  }
+
+  auth0Client = await window.auth0.createAuth0Client({
+    domain: AUTH0_DOMAIN,
+    clientId: AUTH0_CLIENT_ID,
+    authorizationParams: {
+      redirect_uri: REDIRECT_URI
+    },
+    cacheLocation: "memory",
+    useRefreshTokens: false
+  });
+
+  const callbackError = getAuthorizationCallbackError();
+  if (callbackError) {
+    throw callbackError;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const hasAuthCallback =
+    params.has("code") && params.has("state");
+
+  if (hasAuthCallback) {
+    try {
+      await auth0Client.handleRedirectCallback();
+      window.history.replaceState({}, document.title, REDIRECT_URI);
+    } catch (error) {
+      window.history.replaceState({}, document.title, REDIRECT_URI);
+      throw normalizeAuthError(error);
+    }
+  }
+
+  const isAuthenticated = await auth0Client.isAuthenticated();
+
+  if (!isAuthenticated) {
+    clearDashboardState();
+    showPublicView();
+    return;
+  }
+
+  currentUser = await auth0Client.getUser();
+
+  if (!currentUser || !currentUser.sub) {
+    throw new Error("Your account profile could not be loaded.");
+  }
+
+  loadTasks();
+  renderProfile();
+  renderTasks();
+  showAppView();
+}
+
+    elements.loginButton.addEventListener("click", () => {
+      login().catch(error => showError(normalizeAuthError(error)));
+    });
+
+    elements.heroLoginButton.addEventListener("click", () => {
+      login().catch(error => showError(normalizeAuthError(error)));
+    });
+
+    elements.logoutButton.addEventListener("click", () => {
+      logout().catch(showError);
+    });
+
+    elements.retryButton.addEventListener("click", () => {
+      initialize().catch(showError);
+    });
+
+    elements.taskForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const text = elements.taskInput.value.trim();
+      if (!text) return;
+
+      tasks.unshift(createTask(text));
+      saveTasks();
+      elements.taskInput.value = "";
+      renderTasks();
+      elements.taskInput.focus();
+    });
+
+    document.querySelectorAll("[data-filter]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeFilter = button.dataset.filter;
+        document.querySelectorAll("[data-filter]").forEach(filterButton => {
+          filterButton.setAttribute("aria-pressed", String(filterButton === button));
+        });
+        renderTasks();
+      });
+    });
+
+    initialize().catch(showError);
+  </script>
+</body>
+</html>
